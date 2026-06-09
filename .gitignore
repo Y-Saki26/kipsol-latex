@@ -1,0 +1,11 @@
+*.aux
+*.dvi
+*.fls
+*.fdb_latexmk
+*.log
+*.out
+*.pdf
+*.synctex.gz
+.texmf-config/
+.texmf-var/
+.texmf-cache/

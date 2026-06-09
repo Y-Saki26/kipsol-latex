@@ -1,0 +1,852 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{kipsolalphabet}[2026/06/09 v0.1.1 Kipsol alphabet symbols]
+
+\RequirePackage{iftex}
+\RequirePackage{xparse}
+\RequirePackage{l3keys2e}
+\ifPDFTeX
+  \RequirePackage{accsupp}
+\else
+  \ifLuaTeX
+    \RequirePackage{accsupp}
+  \else
+    \RequirePackage[dvipdfmx]{accsupp}
+  \fi
+\fi
+\RequirePackage{tikz}
+\RequirePackage{tikzsymbols}
+
+\ExplSyntaxOn
+
+\msg_new:nnn { kipsolalphabet } { invalid-word } { #1:~#2 }
+
+\fp_new:N \g_kipsol_default_scale_fp
+\fp_new:N \g_kipsol_default_large_radius_fp
+\fp_new:N \g_kipsol_default_small_radius_fp
+\fp_new:N \g_kipsol_default_spoke_offset_fp
+\fp_new:N \g_kipsol_default_pivot_radius_fp
+\fp_new:N \g_kipsol_default_eow_radius_fp
+\fp_new:N \g_kipsol_default_padding_fp
+\fp_new:N \g_kipsol_default_margin_fp
+\str_new:N \g_kipsol_default_copy_text_str
+\bool_new:N \g_kipsol_default_large_radius_auto_bool
+\bool_new:N \g_kipsol_default_small_radius_auto_bool
+
+\fp_gset:Nn \g_kipsol_default_scale_fp { 1 }
+\fp_gset:Nn \g_kipsol_default_large_radius_fp { 0.72 }
+\fp_gset:Nn \g_kipsol_default_small_radius_fp { 0.5 }
+\fp_gset:Nn \g_kipsol_default_spoke_offset_fp { 0 }
+\fp_gset:Nn \g_kipsol_default_pivot_radius_fp { 0.06 }
+\fp_gset:Nn \g_kipsol_default_eow_radius_fp { 0.16 }
+\fp_gset:Nn \g_kipsol_default_padding_fp { 0.18 }
+\fp_gset:Nn \g_kipsol_default_margin_fp { 0.12 }
+\str_gset:Nn \g_kipsol_default_copy_text_str { both }
+\bool_gset_true:N \g_kipsol_default_large_radius_auto_bool
+\bool_gset_true:N \g_kipsol_default_small_radius_auto_bool
+
+\cs_new_protected:Npn \kipsol_default_large_radius:n #1
+  {
+    \str_if_eq:eeTF { \str_lowercase:n {#1} } { auto }
+      { \bool_gset_true:N \g_kipsol_default_large_radius_auto_bool }
+      {
+        \bool_gset_false:N \g_kipsol_default_large_radius_auto_bool
+        \fp_gset:Nn \g_kipsol_default_large_radius_fp {#1}
+      }
+  }
+
+\cs_new_protected:Npn \kipsol_default_small_radius:n #1
+  {
+    \str_if_eq:eeTF { \str_lowercase:n {#1} } { auto }
+      { \bool_gset_true:N \g_kipsol_default_small_radius_auto_bool }
+      {
+        \bool_gset_false:N \g_kipsol_default_small_radius_auto_bool
+        \fp_gset:Nn \g_kipsol_default_small_radius_fp {#1}
+      }
+  }
+
+\cs_new:Npn \kipsol_dim_to_pt:n #1
+  { \dim_to_decimal_in_unit:nn {#1} { 1pt } }
+
+\cs_new_protected:Npn \kipsol_default_copy_text:n #1
+  {
+    \str_case:enF { \str_lowercase:n {#1} }
+      {
+        {actualtext}{ \str_gset:Nn \g_kipsol_default_copy_text_str { actualtext } }
+        {invisible}{ \str_gset:Nn \g_kipsol_default_copy_text_str { invisible } }
+        {both}{ \str_gset:Nn \g_kipsol_default_copy_text_str { both } }
+        {none}{ \str_gset:Nn \g_kipsol_default_copy_text_str { none } }
+      }
+      {
+        \PackageWarning{kipsolalphabet}
+          {Unknown~copy-text~mode~`#1';~using~`both'}
+        \str_gset:Nn \g_kipsol_default_copy_text_str { both }
+      }
+  }
+
+\keys_define:nn { kipsol/package }
+  {
+    scale .fp_gset:N = \g_kipsol_default_scale_fp,
+    large-radius .code:n = { \kipsol_default_large_radius:n {#1} },
+    large~radius .meta:n = { large-radius = #1 },
+    voiced-radius .meta:n = { large-radius = #1 },
+    voiced~radius .meta:n = { large-radius = #1 },
+    small-radius .code:n = { \kipsol_default_small_radius:n {#1} },
+    small~radius .meta:n = { small-radius = #1 },
+    voiceless-radius .meta:n = { small-radius = #1 },
+    voiceless~radius .meta:n = { small-radius = #1 },
+    spoke-offset .fp_gset:N = \g_kipsol_default_spoke_offset_fp,
+    spoke~offset .meta:n = { spoke-offset = #1 },
+    spoke-angle .meta:n = { spoke-offset = #1 },
+    spoke~angle .meta:n = { spoke-offset = #1 },
+    pivot-radius .fp_gset:N = \g_kipsol_default_pivot_radius_fp,
+    pivot~radius .meta:n = { pivot-radius = #1 },
+    eow-radius .fp_gset:N = \g_kipsol_default_eow_radius_fp,
+    eow~radius .meta:n = { eow-radius = #1 },
+    padding .fp_gset:N = \g_kipsol_default_padding_fp,
+    margin .fp_gset:N = \g_kipsol_default_margin_fp,
+    copy-text .code:n = { \kipsol_default_copy_text:n {#1} },
+    copy~text .meta:n = { copy-text = #1 },
+  }
+
+\ProcessKeysOptions { kipsol/package }
+
+\ExplSyntaxOff
+
+\makeatletter
+
+\tikzsymbolsdefinesymbol{kipsolrawconsonant}{
+    S % scale
+    m % radius in ex
+    m % spoke count
+    m % inner circle: 0 or 1
+    m % spoke offset in degrees
+    m % pivot radius in ex
+    m % inner circle radius in ex
+    m % center height above baseline in ex
+}{%
+    \begin{tikzpicture}[
+        /tikzsymbolsstyle,
+        x=1ex,
+        y=1ex,
+        scale=#1,
+        baseline=-#8ex,
+        line width=0.08ex,
+        line cap=round,
+        transform shape
+    ]
+        \draw (0,0) circle (#2);
+        \fill (0,0) circle (#6);
+        \ifnum#4>0
+            \draw (0,0) circle (#7);
+        \fi
+        \ifnum#3>0
+            \foreach \kipsol@i in {1,...,#3} {
+                \draw (0,0) -- ({#5 + 90 - 360/#3*(\kipsol@i - 1)}:#2);
+            }
+        \fi
+    \end{tikzpicture}%
+}
+
+\tikzsymbolsdefinesymbol{kipsolraweow}{
+    S % scale
+    m % radius in ex
+    m % center height above baseline in ex
+}{%
+    \begin{tikzpicture}[
+        /tikzsymbolsstyle,
+        x=1ex,
+        y=1ex,
+        scale=#1,
+        baseline=-#3ex,
+        line width=0.08ex,
+        transform shape
+    ]
+        \draw (0,0) circle (#2);
+    \end{tikzpicture}%
+}
+
+\tikzsymbolsdefinesymbol{kipsolrawvowelmark}{
+    S % scale
+    m % direction in degrees
+}{%
+    \begin{tikzpicture}[
+        /tikzsymbolsstyle,
+        x=1ex,
+        y=1ex,
+        scale=#1,
+        baseline=-0.5ex,
+        line width=0.08ex,
+        line cap=round,
+        >=stealth,
+        transform shape
+    ]
+        \draw[->] ({#2 + 180}:0.5) -- (#2:0.5);
+    \end{tikzpicture}%
+}
+
+\makeatother
+
+\ExplSyntaxOn
+
+\fp_new:N \l_kipsol_scale_fp
+\fp_new:N \l_kipsol_large_radius_fp
+\fp_new:N \l_kipsol_small_radius_fp
+\fp_new:N \l_kipsol_spoke_offset_fp
+\fp_new:N \l_kipsol_pivot_radius_fp
+\fp_new:N \l_kipsol_eow_radius_fp
+\fp_new:N \l_kipsol_padding_fp
+\fp_new:N \l_kipsol_margin_fp
+\fp_new:N \l_kipsol_center_fp
+\str_new:N \l_kipsol_copy_text_str
+\bool_new:N \l_kipsol_large_radius_auto_bool
+\bool_new:N \l_kipsol_small_radius_auto_bool
+\bool_new:N \l_kipsol_copy_actualtext_bool
+\bool_new:N \l_kipsol_copy_invisible_bool
+\dim_new:N \l_kipsol_xheight_dim
+\dim_new:N \l_kipsol_cap_height_dim
+\dim_new:N \l_kipsol_descender_depth_dim
+\dim_new:N \l_kipsol_center_dim
+\dim_new:N \l_kipsol_large_above_dim
+\dim_new:N \l_kipsol_large_below_dim
+\dim_new:N \l_kipsol_large_auto_dim
+\box_new:N \l_kipsol_measure_box
+
+\fp_new:N \l_kipsol_cursor_x_fp
+\fp_new:N \l_kipsol_cursor_y_fp
+\fp_new:N \l_kipsol_cursor_radius_fp
+\fp_new:N \l_kipsol_cursor_direction_fp
+\fp_new:N \l_kipsol_next_x_fp
+\fp_new:N \l_kipsol_next_y_fp
+\fp_new:N \l_kipsol_next_radius_fp
+\fp_new:N \l_kipsol_distance_fp
+\fp_new:N \l_kipsol_min_x_fp
+\fp_new:N \l_kipsol_max_x_fp
+\fp_new:N \l_kipsol_min_y_fp
+\fp_new:N \l_kipsol_max_y_fp
+\fp_new:N \l_kipsol_endpoint_x_fp
+\fp_new:N \l_kipsol_endpoint_y_fp
+\fp_new:N \l_kipsol_angle_fp
+\fp_new:N \l_kipsol_item_spoke_offset_fp
+\fp_new:N \l_kipsol_rotation_factor_fp
+\fp_new:N \l_kipsol_previous_consonant_radius_fp
+\int_new:N \l_kipsol_spokes_int
+\int_new:N \l_kipsol_inner_int
+\bool_new:N \l_kipsol_has_item_bool
+\bool_new:N \l_kipsol_consonant_seen_bool
+\bool_new:N \l_kipsol_previous_consonant_bool
+\bool_new:N \l_kipsol_clockwise_bool
+\bool_new:N \l_kipsol_abort_bool
+\tl_new:N \l_kipsol_previous_type_tl
+\tl_new:N \l_kipsol_error_tl
+\tl_new:N \l_kipsol_word_tl
+\seq_new:N \l_kipsol_connectors_seq
+\seq_new:N \l_kipsol_glyphs_seq
+\seq_new:N \l_kipsol_words_seq
+\int_new:N \l_kipsol_word_index_int
+
+\keys_define:nn { kipsol/command }
+  {
+    scale .fp_set:N = \l_kipsol_scale_fp,
+    large-radius .code:n = { \kipsol_command_large_radius:n {#1} },
+    large~radius .meta:n = { large-radius = #1 },
+    voiced-radius .meta:n = { large-radius = #1 },
+    voiced~radius .meta:n = { large-radius = #1 },
+    small-radius .code:n = { \kipsol_command_small_radius:n {#1} },
+    small~radius .meta:n = { small-radius = #1 },
+    voiceless-radius .meta:n = { small-radius = #1 },
+    voiceless~radius .meta:n = { small-radius = #1 },
+    spoke-offset .fp_set:N = \l_kipsol_spoke_offset_fp,
+    spoke~offset .meta:n = { spoke-offset = #1 },
+    spoke-angle .meta:n = { spoke-offset = #1 },
+    spoke~angle .meta:n = { spoke-offset = #1 },
+    pivot-radius .fp_set:N = \l_kipsol_pivot_radius_fp,
+    pivot~radius .meta:n = { pivot-radius = #1 },
+    eow-radius .fp_set:N = \l_kipsol_eow_radius_fp,
+    eow~radius .meta:n = { eow-radius = #1 },
+    padding .fp_set:N = \l_kipsol_padding_fp,
+    margin .fp_set:N = \l_kipsol_margin_fp,
+    copy-text .code:n = { \kipsol_command_copy_text:n {#1} },
+    copy~text .meta:n = { copy-text = #1 },
+  }
+
+\cs_new_protected:Npn \kipsol_command_large_radius:n #1
+  {
+    \str_if_eq:eeTF { \str_lowercase:n {#1} } { auto }
+      { \bool_set_true:N \l_kipsol_large_radius_auto_bool }
+      {
+        \bool_set_false:N \l_kipsol_large_radius_auto_bool
+        \fp_set:Nn \l_kipsol_large_radius_fp {#1}
+      }
+  }
+
+\cs_new_protected:Npn \kipsol_command_small_radius:n #1
+  {
+    \str_if_eq:eeTF { \str_lowercase:n {#1} } { auto }
+      { \bool_set_true:N \l_kipsol_small_radius_auto_bool }
+      {
+        \bool_set_false:N \l_kipsol_small_radius_auto_bool
+        \fp_set:Nn \l_kipsol_small_radius_fp {#1}
+      }
+  }
+
+\cs_new_protected:Npn \kipsol_command_copy_text:n #1
+  {
+    \str_case:enF { \str_lowercase:n {#1} }
+      {
+        {actualtext}{ \str_set:Nn \l_kipsol_copy_text_str { actualtext } }
+        {invisible}{ \str_set:Nn \l_kipsol_copy_text_str { invisible } }
+        {both}{ \str_set:Nn \l_kipsol_copy_text_str { both } }
+        {none}{ \str_set:Nn \l_kipsol_copy_text_str { none } }
+      }
+      {
+        \PackageWarning{kipsolalphabet}
+          {Unknown~copy-text~mode~`#1';~using~current~default}
+      }
+  }
+
+\cs_new_protected:Npn \kipsol_options_reset:
+  {
+    \fp_set_eq:NN \l_kipsol_scale_fp \g_kipsol_default_scale_fp
+    \fp_set_eq:NN \l_kipsol_large_radius_fp \g_kipsol_default_large_radius_fp
+    \fp_set_eq:NN \l_kipsol_small_radius_fp \g_kipsol_default_small_radius_fp
+    \fp_set_eq:NN \l_kipsol_spoke_offset_fp \g_kipsol_default_spoke_offset_fp
+    \fp_set_eq:NN \l_kipsol_pivot_radius_fp \g_kipsol_default_pivot_radius_fp
+    \fp_set_eq:NN \l_kipsol_eow_radius_fp \g_kipsol_default_eow_radius_fp
+    \fp_set_eq:NN \l_kipsol_padding_fp \g_kipsol_default_padding_fp
+    \fp_set_eq:NN \l_kipsol_margin_fp \g_kipsol_default_margin_fp
+    \str_set_eq:NN \l_kipsol_copy_text_str \g_kipsol_default_copy_text_str
+    \bool_if:NTF \g_kipsol_default_large_radius_auto_bool
+      { \bool_set_true:N \l_kipsol_large_radius_auto_bool }
+      { \bool_set_false:N \l_kipsol_large_radius_auto_bool }
+    \bool_if:NTF \g_kipsol_default_small_radius_auto_bool
+      { \bool_set_true:N \l_kipsol_small_radius_auto_bool }
+      { \bool_set_false:N \l_kipsol_small_radius_auto_bool }
+  }
+
+\cs_new_protected:Npn \kipsol_copy_mode_apply:
+  {
+    \bool_set_false:N \l_kipsol_copy_actualtext_bool
+    \bool_set_false:N \l_kipsol_copy_invisible_bool
+    \str_case:Vn \l_kipsol_copy_text_str
+      {
+        { actualtext } { \bool_set_true:N \l_kipsol_copy_actualtext_bool }
+        { invisible } { \bool_set_true:N \l_kipsol_copy_invisible_bool }
+        { both }
+          {
+            \bool_set_true:N \l_kipsol_copy_actualtext_bool
+            \bool_set_true:N \l_kipsol_copy_invisible_bool
+          }
+        { none } { }
+      }
+  }
+
+\cs_new_protected:Npn \kipsol_resolve_auto_metrics:
+  {
+    \dim_set:Nn \l_kipsol_xheight_dim { 1ex }
+    \hbox_set:Nn \l_kipsol_measure_box { X }
+    \dim_set:Nn \l_kipsol_cap_height_dim { \box_ht:N \l_kipsol_measure_box }
+    \hbox_set:Nn \l_kipsol_measure_box { p }
+    \dim_set:Nn \l_kipsol_descender_depth_dim { \box_dp:N \l_kipsol_measure_box }
+    \dim_set:Nn \l_kipsol_center_dim { 0.5 \l_kipsol_xheight_dim }
+    \fp_set:Nn \l_kipsol_center_fp { 0.5 }
+    \bool_if:NT \l_kipsol_small_radius_auto_bool
+      { \fp_set:Nn \l_kipsol_small_radius_fp { 0.5 } }
+    \bool_if:NT \l_kipsol_large_radius_auto_bool
+      {
+        \dim_set:Nn \l_kipsol_large_above_dim
+          { \l_kipsol_cap_height_dim - \l_kipsol_center_dim }
+        \dim_set:Nn \l_kipsol_large_below_dim
+          { \l_kipsol_center_dim + \l_kipsol_descender_depth_dim }
+        \dim_compare:nNnTF { \l_kipsol_large_above_dim } < { \l_kipsol_large_below_dim }
+          { \dim_set:Nn \l_kipsol_large_auto_dim { \l_kipsol_large_above_dim } }
+          { \dim_set:Nn \l_kipsol_large_auto_dim { \l_kipsol_large_below_dim } }
+        \dim_compare:nNnT { \l_kipsol_large_auto_dim } < { 0.0001pt }
+          { \dim_set:Nn \l_kipsol_large_auto_dim { 0.5 \l_kipsol_xheight_dim } }
+        \fp_set:Nn \l_kipsol_large_radius_fp
+          {
+            \kipsol_dim_to_pt:n { \l_kipsol_large_auto_dim }
+            / \kipsol_dim_to_pt:n { \l_kipsol_xheight_dim }
+          }
+      }
+    \fp_set:Nn \l_kipsol_large_radius_fp { \l_kipsol_large_radius_fp * \l_kipsol_scale_fp }
+    \fp_set:Nn \l_kipsol_small_radius_fp { \l_kipsol_small_radius_fp * \l_kipsol_scale_fp }
+    \fp_set:Nn \l_kipsol_pivot_radius_fp { \l_kipsol_pivot_radius_fp * \l_kipsol_scale_fp }
+    \fp_set:Nn \l_kipsol_eow_radius_fp { \l_kipsol_eow_radius_fp * \l_kipsol_scale_fp }
+    \fp_set:Nn \l_kipsol_padding_fp { \l_kipsol_padding_fp * \l_kipsol_scale_fp }
+    \fp_set:Nn \l_kipsol_margin_fp { \l_kipsol_margin_fp * \l_kipsol_scale_fp }
+  }
+
+\cs_new_protected:Npn \kipsol_options_apply:n #1
+  {
+    \kipsol_options_reset:
+    \tl_if_blank:nF {#1}
+      {
+        \tl_if_in:nnTF {#1} { = }
+          { \keys_set:nn { kipsol/command } {#1} }
+          { \fp_set:Nn \l_kipsol_scale_fp {#1} }
+      }
+    \kipsol_resolve_auto_metrics:
+    \kipsol_copy_mode_apply:
+  }
+
+\cs_new_protected:Npn \kipsol_symbol_large:nnn #1#2#3
+  {
+    \group_begin:
+      \kipsol_options_apply:n {#1}
+      \kipsolrawconsonant[1]
+        { \fp_to_decimal:N \l_kipsol_large_radius_fp } {#2} {#3}
+        { \fp_to_decimal:N \l_kipsol_spoke_offset_fp }
+        { \fp_to_decimal:N \l_kipsol_pivot_radius_fp }
+        { \fp_to_decimal:N \l_kipsol_small_radius_fp }
+        { \fp_to_decimal:N \l_kipsol_center_fp }
+    \group_end:
+  }
+
+\cs_new_protected:Npn \kipsol_symbol_small:nnn #1#2#3
+  {
+    \group_begin:
+      \kipsol_options_apply:n {#1}
+      \kipsolrawconsonant[1]
+        { \fp_to_decimal:N \l_kipsol_small_radius_fp } {#2} {#3}
+        { \fp_to_decimal:N \l_kipsol_spoke_offset_fp }
+        { \fp_to_decimal:N \l_kipsol_pivot_radius_fp }
+        { \fp_to_decimal:N \l_kipsol_small_radius_fp }
+        { \fp_to_decimal:N \l_kipsol_center_fp }
+    \group_end:
+  }
+
+\cs_new_protected:Npn \kipsol_symbol_eow:n #1
+  {
+    \group_begin:
+      \kipsol_options_apply:n {#1}
+      \kipsolraweow[1]
+        { \fp_to_decimal:N \l_kipsol_eow_radius_fp }
+        { \fp_to_decimal:N \l_kipsol_center_fp }
+    \group_end:
+  }
+
+\cs_new_protected:Npn \kipsol_symbol_vowel:nn #1#2
+  {
+    \group_begin:
+      \kipsol_options_apply:n {#1}
+      \kipsolrawvowelmark[\fp_to_decimal:N \l_kipsol_scale_fp]{#2}
+    \group_end:
+  }
+
+\NewDocumentCommand{\KipsolZ}{O{}}{\kipsol_symbol_large:nnn {#1} {0} {0}}
+\NewDocumentCommand{\KipsolD}{O{}}{\kipsol_symbol_large:nnn {#1} {3} {0}}
+\NewDocumentCommand{\KipsolG}{O{}}{\kipsol_symbol_large:nnn {#1} {4} {0}}
+\NewDocumentCommand{\KipsolB}{O{}}{\kipsol_symbol_large:nnn {#1} {6} {0}}
+\NewDocumentCommand{\KipsolL}{O{}}{\kipsol_symbol_large:nnn {#1} {0} {1}}
+\NewDocumentCommand{\KipsolN}{O{}}{\kipsol_symbol_large:nnn {#1} {3} {1}}
+
+\NewDocumentCommand{\KipsolS}{O{}}{\kipsol_symbol_small:nnn {#1} {0} {0}}
+\NewDocumentCommand{\KipsolT}{O{}}{\kipsol_symbol_small:nnn {#1} {3} {0}}
+\NewDocumentCommand{\KipsolK}{O{}}{\kipsol_symbol_small:nnn {#1} {4} {0}}
+\NewDocumentCommand{\KipsolP}{O{}}{\kipsol_symbol_small:nnn {#1} {6} {0}}
+
+\NewDocumentCommand{\KipsolEOW}{O{}}{\kipsol_symbol_eow:n {#1}}
+
+% Vowels have no official standalone glyph. These are explanatory direction markers.
+\NewDocumentCommand{\KipsolI}{O{}}{\kipsol_symbol_vowel:nn {#1} {45}}
+\NewDocumentCommand{\KipsolO}{O{}}{\kipsol_symbol_vowel:nn {#1} {0}}
+\NewDocumentCommand{\KipsolU}{O{}}{\kipsol_symbol_vowel:nn {#1} {-45}}
+
+\cs_new:Npn \kipsol_fp:N #1 { \fp_to_decimal:N #1 }
+
+\cs_new_protected:Npn \kipsol_pdf_literal_direct:n #1
+  {
+    \ifPDFTeX
+      \pdfliteral direct {#1}
+    \else
+      \ifLuaTeX
+        \pdfextension literal direct {#1}
+      \else
+        \special{pdf:literal\space direct\space #1}
+      \fi
+    \fi
+  }
+
+\cs_new_protected:Npn \kipsol_actual_text:nn #1#2
+  {
+    \BeginAccSupp{method=plain,ActualText={#1}}
+      #2
+    \EndAccSupp{}
+  }
+
+\cs_new_protected:Npn \kipsol_copy_text_wrap:nn #1#2
+  {
+    \bool_if:NTF \l_kipsol_copy_actualtext_bool
+      { \kipsol_actual_text:nn {#1} {#2} }
+      { #2 }
+  }
+
+\cs_new_protected:Npn \kipsol_copy_space:
+  {
+    \bool_if:NTF \l_kipsol_copy_actualtext_bool
+      {
+        \BeginAccSupp{method=plain,ActualText={\space}}
+          \quad
+        \EndAccSupp{}
+      }
+      { \quad }
+  }
+
+\cs_new_protected:Npn \kipsol_invisible_copy_text:n #1
+  {
+    \bool_if:NT \l_kipsol_copy_invisible_bool
+      {
+        \leavevmode
+        \rlap
+          {
+            \smash
+              {
+                \kipsol_pdf_literal_direct:n { 3\space Tr }
+                \normalfont #1
+                \kipsol_pdf_literal_direct:n { 0\space Tr }
+              }
+          }
+      }
+  }
+
+\cs_new_protected:Npn \kipsol_letter:n #1
+  {
+    \str_case:enF { \str_lowercase:n {#1} }
+      {
+        {z}{\KipsolZ}
+        {d}{\KipsolD}
+        {g}{\KipsolG}
+        {b}{\KipsolB}
+        {l}{\KipsolL}
+        {n}{\KipsolN}
+        {s}{\KipsolS}
+        {t}{\KipsolT}
+        {k}{\KipsolK}
+        {p}{\KipsolP}
+        {i}{\KipsolI}
+        {o}{\KipsolO}
+        {u}{\KipsolU}
+      }
+      {\texttt{#1}}
+  }
+
+\NewDocumentCommand{\KipsolLetters}{m}
+  {
+    \tl_map_inline:nn {#1}
+      {
+        \kipsol_letter:n {##1}\kern0.16em
+      }
+  }
+
+\cs_new_protected:Npn \kipsol_word_init:n #1
+  {
+    \tl_set:Nn \l_kipsol_word_tl {#1}
+    \fp_zero:N \l_kipsol_cursor_x_fp
+    \fp_zero:N \l_kipsol_cursor_y_fp
+    \fp_zero:N \l_kipsol_cursor_radius_fp
+    \fp_zero:N \l_kipsol_cursor_direction_fp
+    \fp_set:Nn \l_kipsol_min_x_fp { 1000 }
+    \fp_set:Nn \l_kipsol_max_x_fp { -1000 }
+    \fp_set:Nn \l_kipsol_min_y_fp { 1000 }
+    \fp_set:Nn \l_kipsol_max_y_fp { -1000 }
+    \fp_set:Nn \l_kipsol_rotation_factor_fp { 1 }
+    \fp_zero:N \l_kipsol_previous_consonant_radius_fp
+    \bool_set_false:N \l_kipsol_has_item_bool
+    \bool_set_false:N \l_kipsol_consonant_seen_bool
+    \bool_set_false:N \l_kipsol_previous_consonant_bool
+    \bool_set_true:N \l_kipsol_clockwise_bool
+    \bool_set_false:N \l_kipsol_abort_bool
+    \tl_clear:N \l_kipsol_previous_type_tl
+    \tl_clear:N \l_kipsol_error_tl
+    \seq_clear:N \l_kipsol_connectors_seq
+    \seq_clear:N \l_kipsol_glyphs_seq
+  }
+
+\cs_new_protected:Npn \kipsol_abort:n #1
+  {
+    \bool_set_true:N \l_kipsol_abort_bool
+    \tl_set:Nn \l_kipsol_error_tl {#1}
+  }
+
+\cs_new_protected:Npn \kipsol_include_circle:nnn #1#2#3
+  {
+    \fp_set:Nn \l_kipsol_min_x_fp { min(\l_kipsol_min_x_fp, (#1) - (#3)) }
+    \fp_set:Nn \l_kipsol_max_x_fp { max(\l_kipsol_max_x_fp, (#1) + (#3)) }
+    \fp_set:Nn \l_kipsol_min_y_fp { min(\l_kipsol_min_y_fp, (#2) - (#3)) }
+    \fp_set:Nn \l_kipsol_max_y_fp { max(\l_kipsol_max_y_fp, (#2) + (#3)) }
+  }
+
+\cs_new_protected:Npn \kipsol_set_consonant:n #1
+  {
+    \str_case:enF { \str_lowercase:n {#1} }
+      {
+        {z}{ \fp_set_eq:NN \l_kipsol_next_radius_fp \l_kipsol_large_radius_fp \int_zero:N \l_kipsol_spokes_int \int_zero:N \l_kipsol_inner_int }
+        {d}{ \fp_set_eq:NN \l_kipsol_next_radius_fp \l_kipsol_large_radius_fp \int_set:Nn \l_kipsol_spokes_int {3} \int_zero:N \l_kipsol_inner_int }
+        {g}{ \fp_set_eq:NN \l_kipsol_next_radius_fp \l_kipsol_large_radius_fp \int_set:Nn \l_kipsol_spokes_int {4} \int_zero:N \l_kipsol_inner_int }
+        {b}{ \fp_set_eq:NN \l_kipsol_next_radius_fp \l_kipsol_large_radius_fp \int_set:Nn \l_kipsol_spokes_int {6} \int_zero:N \l_kipsol_inner_int }
+        {l}{ \fp_set_eq:NN \l_kipsol_next_radius_fp \l_kipsol_large_radius_fp \int_zero:N \l_kipsol_spokes_int \int_set:Nn \l_kipsol_inner_int {1} }
+        {n}{ \fp_set_eq:NN \l_kipsol_next_radius_fp \l_kipsol_large_radius_fp \int_set:Nn \l_kipsol_spokes_int {3} \int_set:Nn \l_kipsol_inner_int {1} }
+        {s}{ \fp_set_eq:NN \l_kipsol_next_radius_fp \l_kipsol_small_radius_fp \int_zero:N \l_kipsol_spokes_int \int_zero:N \l_kipsol_inner_int }
+        {t}{ \fp_set_eq:NN \l_kipsol_next_radius_fp \l_kipsol_small_radius_fp \int_set:Nn \l_kipsol_spokes_int {3} \int_zero:N \l_kipsol_inner_int }
+        {k}{ \fp_set_eq:NN \l_kipsol_next_radius_fp \l_kipsol_small_radius_fp \int_set:Nn \l_kipsol_spokes_int {4} \int_zero:N \l_kipsol_inner_int }
+        {p}{ \fp_set_eq:NN \l_kipsol_next_radius_fp \l_kipsol_small_radius_fp \int_set:Nn \l_kipsol_spokes_int {6} \int_zero:N \l_kipsol_inner_int }
+      }
+      { \kipsol_abort:n { Invalid~Kipsol~symbol } }
+  }
+
+\cs_new_protected:Npn \kipsol_append_line:nnnn #1#2#3#4
+  {
+    \seq_put_right:Nx \l_kipsol_connectors_seq
+      { \exp_not:N \draw (#1,#2) -- (#3,#4); }
+  }
+
+\cs_new_protected:Npn \kipsol_append_glyph:
+  {
+    \seq_put_right:Nx \l_kipsol_glyphs_seq
+      {
+        \exp_not:N \draw
+        ( \kipsol_fp:N \l_kipsol_next_x_fp , \kipsol_fp:N \l_kipsol_next_y_fp )
+        circle ( \kipsol_fp:N \l_kipsol_next_radius_fp );
+      }
+    \seq_put_right:Nx \l_kipsol_glyphs_seq
+      {
+        \exp_not:N \fill
+        ( \kipsol_fp:N \l_kipsol_next_x_fp , \kipsol_fp:N \l_kipsol_next_y_fp )
+        circle ( \fp_to_decimal:N \l_kipsol_pivot_radius_fp );
+      }
+    \int_compare:nNnT \l_kipsol_inner_int > {0}
+      {
+        \seq_put_right:Nx \l_kipsol_glyphs_seq
+          {
+            \exp_not:N \draw
+            ( \kipsol_fp:N \l_kipsol_next_x_fp , \kipsol_fp:N \l_kipsol_next_y_fp )
+            circle ( \fp_to_decimal:N \l_kipsol_small_radius_fp );
+          }
+      }
+    \int_compare:nNnT \l_kipsol_spokes_int > {0}
+      {
+        \int_step_inline:nn { \l_kipsol_spokes_int }
+          {
+            \fp_set:Nn \l_kipsol_angle_fp
+              { \l_kipsol_item_spoke_offset_fp + 90 - 360 / \l_kipsol_spokes_int * (##1 - 1) }
+            \fp_set:Nn \l_kipsol_endpoint_x_fp
+              { \l_kipsol_next_x_fp + \l_kipsol_next_radius_fp * cosd(\l_kipsol_angle_fp) }
+            \fp_set:Nn \l_kipsol_endpoint_y_fp
+              { \l_kipsol_next_y_fp + \l_kipsol_next_radius_fp * sind(\l_kipsol_angle_fp) }
+            \seq_put_right:Nx \l_kipsol_glyphs_seq
+              {
+                \exp_not:N \draw
+                ( \kipsol_fp:N \l_kipsol_next_x_fp , \kipsol_fp:N \l_kipsol_next_y_fp )
+                -- ( \kipsol_fp:N \l_kipsol_endpoint_x_fp , \kipsol_fp:N \l_kipsol_endpoint_y_fp );
+              }
+          }
+      }
+  }
+
+\cs_new_protected:Npn \kipsol_process_vowel:n #1
+  {
+    \bool_if:NF \l_kipsol_has_item_bool
+      { \kipsol_abort:n { Initial~vowel~is~not~allowed } }
+    \tl_if_eq:NnT \l_kipsol_previous_type_tl { vowel }
+      { \kipsol_abort:n { Continuous~vowels~are~not~allowed } }
+    \bool_if:NF \l_kipsol_abort_bool
+      {
+        \str_case:en { \str_lowercase:n {#1} }
+          {
+            {i}{ \fp_set:Nn \l_kipsol_cursor_direction_fp { 45 } }
+            {o}{ \fp_zero:N \l_kipsol_cursor_direction_fp }
+            {u}{ \fp_set:Nn \l_kipsol_cursor_direction_fp { -45 } }
+          }
+        \tl_set:Nn \l_kipsol_previous_type_tl { vowel }
+      }
+  }
+
+\cs_new_protected:Npn \kipsol_process_consonant:n #1
+  {
+    \kipsol_set_consonant:n {#1}
+    \bool_if:NT \l_kipsol_abort_bool { \tl_map_break: }
+    \fp_set_eq:NN \l_kipsol_next_x_fp \l_kipsol_cursor_x_fp
+    \fp_set_eq:NN \l_kipsol_next_y_fp \l_kipsol_cursor_y_fp
+    \bool_if:NT \l_kipsol_has_item_bool
+      {
+        \fp_set:Nn \l_kipsol_distance_fp
+          { \l_kipsol_cursor_radius_fp + \l_kipsol_next_radius_fp }
+        \tl_if_eq:NnT \l_kipsol_previous_type_tl { consonant }
+          { \fp_add:Nn \l_kipsol_distance_fp { \l_kipsol_padding_fp } }
+        \fp_set:Nn \l_kipsol_next_x_fp
+          { \l_kipsol_cursor_x_fp + \l_kipsol_distance_fp * cosd(\l_kipsol_cursor_direction_fp) }
+        \fp_set:Nn \l_kipsol_next_y_fp
+          { \l_kipsol_cursor_y_fp + \l_kipsol_distance_fp * sind(\l_kipsol_cursor_direction_fp) }
+        \tl_if_eq:NnT \l_kipsol_previous_type_tl { consonant }
+          {
+            \bool_set_inverse:N \l_kipsol_clockwise_bool
+            \kipsol_append_line:nnnn
+              { \kipsol_fp:N \l_kipsol_cursor_x_fp }
+              { \kipsol_fp:N \l_kipsol_cursor_y_fp }
+              { \kipsol_fp:N \l_kipsol_next_x_fp }
+              { \kipsol_fp:N \l_kipsol_next_y_fp }
+          }
+      }
+    \tl_if_eq:NnT \l_kipsol_previous_type_tl { vowel }
+      {
+        \bool_if:NT \l_kipsol_previous_consonant_bool
+          {
+            \fp_set:Nn \l_kipsol_rotation_factor_fp
+              { \l_kipsol_rotation_factor_fp * \l_kipsol_previous_consonant_radius_fp / \l_kipsol_next_radius_fp }
+          }
+      }
+    \bool_if:NTF \l_kipsol_clockwise_bool
+      {
+        \fp_set:Nn \l_kipsol_item_spoke_offset_fp
+          { \l_kipsol_rotation_factor_fp * \l_kipsol_spoke_offset_fp }
+      }
+      {
+        \fp_set:Nn \l_kipsol_item_spoke_offset_fp
+          { - \l_kipsol_rotation_factor_fp * \l_kipsol_spoke_offset_fp }
+      }
+    \kipsol_append_glyph:
+    \kipsol_include_circle:nnn
+      { \l_kipsol_next_x_fp }
+      { \l_kipsol_next_y_fp }
+      { \l_kipsol_next_radius_fp }
+    \fp_set_eq:NN \l_kipsol_cursor_x_fp \l_kipsol_next_x_fp
+    \fp_set_eq:NN \l_kipsol_cursor_y_fp \l_kipsol_next_y_fp
+    \fp_set_eq:NN \l_kipsol_cursor_radius_fp \l_kipsol_next_radius_fp
+    \fp_set_eq:NN \l_kipsol_previous_consonant_radius_fp \l_kipsol_next_radius_fp
+    \fp_zero:N \l_kipsol_cursor_direction_fp
+    \bool_set_true:N \l_kipsol_has_item_bool
+    \bool_set_true:N \l_kipsol_consonant_seen_bool
+    \bool_set_true:N \l_kipsol_previous_consonant_bool
+    \bool_set_inverse:N \l_kipsol_clockwise_bool
+    \tl_set:Nn \l_kipsol_previous_type_tl { consonant }
+  }
+
+\cs_new_protected:Npn \kipsol_process_symbol:n #1
+  {
+    \bool_if:NTF \l_kipsol_abort_bool
+      { \tl_map_break: }
+      {
+        \str_case:enF { \str_lowercase:n {#1} }
+          {
+            {i}{ \kipsol_process_vowel:n {#1} }
+            {o}{ \kipsol_process_vowel:n {#1} }
+            {u}{ \kipsol_process_vowel:n {#1} }
+          }
+          { \kipsol_process_consonant:n {#1} }
+        \bool_if:NT \l_kipsol_abort_bool { \tl_map_break: }
+      }
+  }
+
+\cs_new_protected:Npn \kipsol_finish_word:
+  {
+    \bool_if:NF \l_kipsol_abort_bool
+      {
+        \bool_if:NF \l_kipsol_consonant_seen_bool
+          { \kipsol_abort:n { No~consonant~found } }
+      }
+    \bool_if:NF \l_kipsol_abort_bool
+      {
+        \fp_set:Nn \l_kipsol_distance_fp
+          { \l_kipsol_cursor_radius_fp + \l_kipsol_eow_radius_fp }
+        \tl_if_eq:NnT \l_kipsol_previous_type_tl { consonant }
+          { \fp_add:Nn \l_kipsol_distance_fp { \l_kipsol_padding_fp } }
+        \fp_set:Nn \l_kipsol_next_x_fp
+          { \l_kipsol_cursor_x_fp + \l_kipsol_distance_fp * cosd(\l_kipsol_cursor_direction_fp) }
+        \fp_set:Nn \l_kipsol_next_y_fp
+          { \l_kipsol_cursor_y_fp + \l_kipsol_distance_fp * sind(\l_kipsol_cursor_direction_fp) }
+        \tl_if_eq:NnT \l_kipsol_previous_type_tl { consonant }
+          {
+            \fp_set:Nn \l_kipsol_endpoint_x_fp
+              { \l_kipsol_cursor_x_fp + (\l_kipsol_distance_fp - \l_kipsol_eow_radius_fp) * cosd(\l_kipsol_cursor_direction_fp) }
+            \fp_set:Nn \l_kipsol_endpoint_y_fp
+              { \l_kipsol_cursor_y_fp + (\l_kipsol_distance_fp - \l_kipsol_eow_radius_fp) * sind(\l_kipsol_cursor_direction_fp) }
+            \kipsol_append_line:nnnn
+              { \kipsol_fp:N \l_kipsol_cursor_x_fp }
+              { \kipsol_fp:N \l_kipsol_cursor_y_fp }
+              { \kipsol_fp:N \l_kipsol_endpoint_x_fp }
+              { \kipsol_fp:N \l_kipsol_endpoint_y_fp }
+          }
+        \kipsol_include_circle:nnn
+          { \l_kipsol_next_x_fp }
+          { \l_kipsol_next_y_fp }
+          { \l_kipsol_eow_radius_fp }
+      }
+  }
+
+\cs_new_protected:Npn \kipsol_print_word:n #1
+  {
+    \msg_warning:nnxx { kipsolalphabet } { invalid-word }
+      { \tl_use:N \l_kipsol_error_tl }
+      {#1}
+    \texttt{#1}
+  }
+
+\cs_new_protected:Npn \kipsol_word_render:nn #1#2
+  {
+    \group_begin:
+      \kipsol_options_apply:n {#1}
+      \kipsol_word_init:n {#2}
+      \tl_if_blank:nTF {#2}
+        { \kipsol_abort:n { Blank~word } }
+        { \tl_map_inline:nn {#2} { \kipsol_process_symbol:n {##1} } }
+      \kipsol_finish_word:
+      \bool_if:NTF \l_kipsol_abort_bool
+        { \kipsol_print_word:n {#2} }
+        {
+          \kipsol_copy_text_wrap:nn {#2}
+            {
+              \leavevmode
+              \kipsol_invisible_copy_text:n {#2}
+              \begin{tikzpicture}[
+                x=1ex,
+                y=1ex,
+                scale=1,
+                baseline=-\fp_to_decimal:N \l_kipsol_center_fp ex,
+                line~width=0.08ex,
+                line~cap=round,
+                transform~shape
+              ]
+                \path[use~as~bounding~box]
+                  ( { \fp_to_decimal:n { \l_kipsol_min_x_fp - \l_kipsol_margin_fp } },
+                    { \fp_to_decimal:n { \l_kipsol_min_y_fp - \l_kipsol_margin_fp } } )
+                  rectangle
+                  ( { \fp_to_decimal:n { \l_kipsol_max_x_fp + \l_kipsol_margin_fp } },
+                    { \fp_to_decimal:n { \l_kipsol_max_y_fp + \l_kipsol_margin_fp } } );
+                \seq_use:Nn \l_kipsol_connectors_seq { }
+                \seq_use:Nn \l_kipsol_glyphs_seq { }
+                \draw
+                  ( \kipsol_fp:N \l_kipsol_next_x_fp , \kipsol_fp:N \l_kipsol_next_y_fp )
+                  circle ( \fp_to_decimal:N \l_kipsol_eow_radius_fp );
+              \end{tikzpicture}
+            }
+        }
+    \group_end:
+  }
+
+\NewDocumentCommand{\KipsolWord}{O{}m}
+  {
+    \kipsol_word_render:nn {#1} {#2}
+  }
+
+\NewDocumentCommand{\KipsolText}{O{}m}
+  {
+    \group_begin:
+      \kipsol_options_apply:n {#1}
+      \seq_set_split:Nnn \l_kipsol_words_seq { ~ } {#2}
+      \int_zero:N \l_kipsol_word_index_int
+      \seq_map_inline:Nn \l_kipsol_words_seq
+        {
+          \tl_if_blank:nF {##1}
+            {
+              \int_incr:N \l_kipsol_word_index_int
+              \int_compare:nNnT \l_kipsol_word_index_int > {1}
+                { \kipsol_copy_space: }
+              \KipsolWord[#1]{##1}
+            }
+        }
+    \group_end:
+  }
+
+\NewDocumentCommand{\KipsolTranscription}{m}{\KipsolText{#1}}
+
+\ExplSyntaxOff
