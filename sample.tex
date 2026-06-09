@@ -1,0 +1,96 @@
+\PassOptionsToPackage{dvipdfmx}{graphicx}
+\PassOptionsToPackage{dvipdfmx}{xcolor}
+\documentclass[dvipdfmx,a4paper]{jsarticle}
+
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage[
+  large-radius=auto,
+  small-radius=auto,
+  copy-text=both
+]{kipsolalphabet}
+
+\geometry{margin=24mm}
+
+\title{キプソル語単語のLaTeX組版サンプル}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Usage}
+
+パッケージを読み込んで、\verb`\KipsolWord` で1単語、 \verb`\KipsolText` で1文を出力します。
+
+\begin{verbatim}
+\usepackage{kipsolalphabet}
+
+\KipsolWord{kipsol}
+\KipsolText{nus ninol zidbulo kikos}
+\end{verbatim}
+
+\verb`\KipsolD` のように、\verb`\Kipsol*` コマンドは語末記号を含まない1文字のみを出力します。
+
+オプションとして数値を与えるとその分スケールします。デフォルトでは無声音は ``x'' と同じ高さ、有声音はアルファベットの上下幅に収まるよう設定されます\footnote{正確にはキャップハイトとディセンダラインのうち近い方に接するように定義されます}。
+
+\subsection{子音アルファベット}
+
+\begin{center}
+\begin{tabular}{cccccccccc}
+\toprule
+z & d & g & b & l & n & s & t & k & p \\
+\midrule
+\KipsolZ[1.5] & \KipsolD[1.5] & \KipsolG[1.5] & \KipsolB[1.5] &
+\KipsolL[1.5] & \KipsolN[1.5] & \KipsolS[1.5] & \KipsolT[1.5] &
+\KipsolK[1.5] & \KipsolP[1.5] \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{語末記号と母音}
+
+単語の終端はさらに小さい○で示されます。
+
+\begin{center}
+%\renewcommand{\arraystretch}{1.6}
+\begin{tabular}{c}
+\toprule
+end of word  \\
+\midrule
+\KipsolEOW[1.5]  \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+母音は子音字の接する方向で表されるため文字を持ちませんが、文字をバラして説明する際などのために便宜上方向を表す矢印がレンダリングされます。矢印で円の接する方向を表します。
+
+\begin{center}
+\begin{tabular}{ccc}
+\toprule
+i & o & u \\
+\midrule
+\KipsolI[1.5] & \KipsolO[1.5] & \KipsolU[1.5] \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{本文中での使用例}
+
+単語や文字はインラインで使うことができ、通常の記号のように本文中へ挿入できます。
+\begin{quote}
+例: \texttt{kipsol} はそれぞれ \verb`\KipsolK, \KipsolI, \KipsolP, \KipsolS, \KipsolO, \KipsolL, \KipsolEOW` で表記され、繋げて書くと \verb`\KipsolWord{kipsol}` です。
+\end{quote}
+\begin{quote}
+例: \texttt{kipsol} はそれぞれ \KipsolK, \KipsolI, \KipsolP, \KipsolS, \KipsolO, \KipsolL, \KipsolEOW で表記され、繋げて書くと \KipsolWord{kipsol} です。
+\end{quote}
+
+文字サイズに応じてスケールします、
+\begin{quote}
+\verb`\Large nus ninol zidbulo kikos は \KipsolText{nus ninol zidbulo kikos} と表されます。`
+\end{quote}
+\begin{quote}
+\Large nus ninol zidbulo kikos は \KipsolText{nus ninol zidbulo kikos} と表されます。
+\end{quote}
+
+\end{document}
